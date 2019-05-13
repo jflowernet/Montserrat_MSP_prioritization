@@ -1,0 +1,13 @@
+Projection    TRANSVERSE
+Datum         ASM
+Spheroid      CLARKE1880
+Units         METERS
+Zunits        NO
+Xshift        0.0
+Yshift        0.0
+Parameters    
+0.9995 /* scale factor at central meridian
+ -62  0  0.0 /* longitude of central meridian
+   0  0  0.0 /* latitude of origin
+400000.0 /* false easting (meters)
+0.0 /* false northing (meters)
