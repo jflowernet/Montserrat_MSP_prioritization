@@ -141,7 +141,7 @@ plotstack <- stack(sprob_10perc, sprob_20perc, sprob_30perc, sprob_40perc)
 #plot outputs
 tm_shape(plotstack)+
 tm_raster(palette = c("#c6c5c5", "#409a00"), n=2, legend.show = FALSE) +
-  tm_layout(title = c("(a) 10%", "(b) 20%", "(c) 30%", "(d) 40%")) 
+  tm_layout(title = c("(a)", "(b)", "(c)", "(d)")) 
 
 tmap_save(filename = "outputs/varying_habitat_targets.png")
 #################################################
@@ -184,6 +184,6 @@ plotstack <- stack(s_species_prob_10perc, s_species_prob_30perc, s_species_prob_
 #plot outputs
 tm_shape(plotstack)+
   tm_raster(palette = c("#c6c5c5", "#409a00"), n=2, legend.show = FALSE) +
-  tm_layout(title = c("(a) 10%", "(b) 30%", "(c) 50%", "(d) 70%")) 
+  tm_layout(title = c("(a)", "(b)", "(c)", "(d)")) 
 
 tmap_save(filename = "outputs/varying_sprich_targets.png")
