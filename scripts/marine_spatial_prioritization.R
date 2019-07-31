@@ -3,7 +3,7 @@
 #Purpose: Generate map of priority conservation areas within 100m shelf
 #Data from Waitt Institute Scientific Assessment of Montserrat conducted in October 2015
 #Contact: Jason Flower, Sustainable Fisheries Group, University of California Santa Barbara (jflower@ucsb.edu)
-#Date: 13 May 2019
+#Date: 31 July 2019
 #########################################################
 
 #load required libraries
@@ -14,8 +14,10 @@ library(dplyr)
 library(raster)
 library(rgdal)
 library(sp)
+library(sf)
 library(prioritizr)
 library(gurobi) 
+library(ipdw)
 library(tmap)
 
 ########################################################
@@ -187,3 +189,34 @@ tm_shape(plotstack)+
   tm_layout(title = c("(a)", "(b)", "(c)", "(d)")) 
 
 tmap_save(filename = "outputs/varying_sprich_targets.png")
+
+#####################################################
+#Lock-in no-take areas and re-run prioritization
+#####################################################
+
+#read in the final zones map
+zoning_plan <- st_read("data/2018_03_20_Option_5/")
+
+#filter for only the no-take zones and transform to same projection as rest of spatial data
+no_take_MPAs <- zoning_plan %>% 
+  filter(ZONE_TYPE == "Sanctuary") %>% 
+  st_transform(mni_proj)
+
+#rasterize the no-take areas polygons
+no_take_MPAs_raster <- rasterize(no_take_MPAs, plangrid, field = 1, update =TRUE)
+
+#create the conservation problem - protect 30% of each habitat, 50% of total species richness, while minimizing cost (overlap with fishing effort proxy), with areas selected as no-take reserves in the final draft zoning plan locked-in as protected
+#we only need to take the original conservation problem defined previously and add the locked-in constraints
+
+prob_with_lock_in <- prob %>% add_locked_in_constraints(no_take_MPAs_raster)
+
+#solve problem
+sprob_lock_in <- solve(prob_with_lock_in)
+
+#plot output with no-take area borders
+tm_shape(sprob_lock_in)+
+  tm_raster(palette = c("#c6c5c5", "#409a00"), n=2, legend.show = FALSE) +
+tm_shape(no_take_MPAs) +
+  tm_borders("black")
+
+tmap_save(filename = "outputs/lock_in_no_takes.png")
