@@ -22,18 +22,3 @@ species[species == 0] <- NA
 species <- species/cellStats(species, max)
 
 writeRaster(species, filename = "outputs/speciesrich.tif", format = "GTiff", datatype = "FLT4S")
-
-#plotting script if needed
-
-#library(leaflet)
-
-#transform richness back to WGS as leaflet doesn't like other projection
-#richness <- spTransform(richness, gps)
-
-#pal <- colorNumeric(palette = "YlOrBr", values(species), na.color = "transparent")
-
-#leaflet ()%>%
-#  addTiles() %>%
-#  addRasterImage(species, colors = pal) %>%
-#  addLegend(pal = pal, values = values(species)) %>%
-#  addCircleMarkers(data = richness, radius = ~Total_Diversity/4)

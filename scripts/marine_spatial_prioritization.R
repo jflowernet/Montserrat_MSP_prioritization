@@ -1,6 +1,6 @@
 #########################################################
 #Montserrat marine spatial prioritization - code to accompany paper Flower et al. 2019
-#Purpose: Generate map of priority conservation areas within 100m shelf
+#Purpose: Generate map of priority conservation areas within Montserrat's 100m shelf area
 #Data from Waitt Institute Scientific Assessment of Montserrat conducted in October 2015
 #Contact: Jason Flower, Sustainable Fisheries Group, University of California Santa Barbara (jflower@ucsb.edu)
 #Date: 31 July 2019
@@ -8,17 +8,12 @@
 
 #load required libraries
 #Note: Use of the Gurobi library requires a license. More information about installing Gurobi https://prioritizr.net/articles/gurobi_installation.html
+#Other optimizers can be used to solve the prioritizr conservation problems: https://prioritizr.net/articles/saltspring.html#solving-the-problem
 
-library(readr)
-library(dplyr)
-library(raster)
-library(rgdal)
-library(sp)
-library(sf)
-library(prioritizr)
-library(gurobi) 
-library(ipdw)
-library(tmap)
+# pacman will help us install any necessary packages
+if (!require("pacman")) install.packages("pacman")
+# pacman::p_load checks to see if these packages are installed, and installs them if not
+pacman::p_load(readr, dplyr, raster, rgdal, sp, sf, prioritizr, gurobi, ipdw, tmap)
 
 ########################################################
 #Set projections
@@ -104,8 +99,16 @@ sprob <- solve(prob)
 plot(sprob,  main = c("30% of 7 habitats, 50% species richness (interpolated), penalty = 0.001, edge = 0.5"))
 
 #################################################
-#10 - 40% area protection targets comparison
+#10 - 40% area protection targets comparison - results for Appendix Figure S3
 #################################################
+
+#read in the final zones map - this will be used here and in the locked-in no-take areas code chunk at the end of this script
+zoning_plan <- st_read("data/2018_03_20_Option_5/")
+
+#filter for only the no-take zones and transform to same projection as rest of spatial data
+no_take_MPAs <- zoning_plan %>% 
+  filter(ZONE_TYPE == "Sanctuary") %>% 
+  st_transform(mni_proj)
 
 #create the conservation problem - protect 10, 20, 30 or 40% of each habitat, 50% of total species richness, while minimizing cost (overlap with fishing effort proxy)
 prob_10perc <- problem(cost, features = features_stack) %>%
@@ -143,11 +146,33 @@ plotstack <- stack(sprob_10perc, sprob_20perc, sprob_30perc, sprob_40perc)
 #plot outputs
 tm_shape(plotstack)+
 tm_raster(palette = c("#c6c5c5", "#409a00"), n=2, legend.show = FALSE) +
-  tm_layout(title = c("(a)", "(b)", "(c)", "(d)")) 
+  tm_layout(title = c("(a)", "(b)", "(c)", "(d)")) +
+  tm_shape(no_take_MPAs) +
+  tm_borders("black")
 
 tmap_save(filename = "outputs/varying_habitat_targets.png")
+
+########################################################
+#calculate percent of total no-take MPA area occupied by cells selected by prioritizr
+
+#create single MPA layer for calculation
+no_take_MPAs_dissolved <- no_take_MPAs %>% 
+  group_by() %>% 
+  summarise()
+
+#percent for each habitat target scenario: 20, 30, 40, 50%
+table_habitat_target_area_priortized <- extract(plotstack, no_take_MPAs_dissolved, fun=function(x, ...) sum(na.omit(x))/length(na.omit(x)))
+colnames(table_habitat_target_area_priortized) <- c("20% target", "30%", "40%", "50%")
+table_habitat_target_area_priortized
+
+#percent for each habitat target scenario, broken down into each of the 4 MPA zones - see 
+table_habitat_target_area_priortized_byzone <- extract(plotstack, no_take_MPAs, fun=function(x, ...) sum(na.omit(x))/length(na.omit(x)))
+colnames(table_habitat_target_area_priortized_byzone) <- c("20% target", "30%", "40%", "50%")
+rownames(table_habitat_target_area_priortized_byzone) <- pull(no_take_MPAs, NAME)
+table_habitat_target_area_priortized_byzone
+
 #################################################
-#Varying species richness feature target
+#Varying species richness feature target - results for Appendix Figure S2
 #################################################
 
 #create the conservation problem - protect 10, 30, 50 or 70% of total (summed) species richness, 30% of each habitat, while minimizing cost (overlap with fishing effort proxy)
@@ -191,18 +216,10 @@ tm_shape(plotstack)+
 tmap_save(filename = "outputs/varying_sprich_targets.png")
 
 #####################################################
-#Lock-in no-take areas and re-run prioritization
+#Lock-in no-take areas and re-run prioritization - results for Appendix Figure S5
 #####################################################
 
-#read in the final zones map
-zoning_plan <- st_read("data/2018_03_20_Option_5/")
-
-#filter for only the no-take zones and transform to same projection as rest of spatial data
-no_take_MPAs <- zoning_plan %>% 
-  filter(ZONE_TYPE == "Sanctuary") %>% 
-  st_transform(mni_proj)
-
-#rasterize the no-take areas polygons
+#rasterize the no-take areas polygons from the final zoning plan
 no_take_MPAs_raster <- rasterize(no_take_MPAs, plangrid, field = 1, update =TRUE)
 
 #create the conservation problem - protect 30% of each habitat, 50% of total species richness, while minimizing cost (overlap with fishing effort proxy), with areas selected as no-take reserves in the final draft zoning plan locked-in as protected
