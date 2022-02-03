@@ -18,3 +18,12 @@ Flower, J., Ramdeen, R., Estep, A., Thomas, L.R., Francis, S., Goldberg, G., Joh
 The systematic conservation prioritization package `prioritizr`used for the spatial prioritization uses the Gurobi library which requires a license. More information about installing Gurobi: https://prioritizr.net/articles/gurobi_installation.html
 
 Other optimizers can be used to solve the `prioritizr` conservation problems: https://prioritizr.net/articles/saltspring.html#solving-the-problem
+
+### Update 2022-02-03
+
+Added additional original (non-processed) data following a data request, so that data is publicly available in the future. Data files are in `data` directory:
+
+* `fish_pots_pts.gpkg` - fishing pot locations as points. See paper Methods for how this data was used to create the fishing effort shown in Figure 3 (c). In WGS84 EPSG:4326 projection.
+* `fishing_value.tif` - the fishing value layer from Figure S1 (b) in the Supplementary information. In WGS84 EPSG:4326 projection.
+* `habitat_map.gpkg` - vector format habitat map, as shown in Figure 3 (a).  In WGS84 EPSG:4326 projection.
+
